@@ -81,7 +81,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	ctx.String(http.StatusOK, "hello, 你在注册")
+	ctx.String(http.StatusOK, "注册成功")
 }
 
 func (h *UserHandler) Login(ctx *gin.Context) {
