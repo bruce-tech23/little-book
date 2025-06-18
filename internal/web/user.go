@@ -1,6 +1,8 @@
 package web
 
 import (
+	"geektime-basic-learning2/little-book/internal/domain"
+	"geektime-basic-learning2/little-book/internal/service"
 	regexp "github.com/dlclark/regexp2" // 官方自带的 regexp 不支持 ?=.
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -15,12 +17,15 @@ const (
 type UserHandler struct {
 	emailRegExp    *regexp.Regexp
 	passwordRegExp *regexp.Regexp
+	svc            *service.UserService
 }
 
-func NewUserHandler() *UserHandler {
+// NewUserHandler svc 外面传入是保证 依赖注入 的风格，所以不能这里 new
+func NewUserHandler(svc *service.UserService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
+		svc:            svc,
 	}
 }
 
@@ -67,6 +72,15 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "密码格式不正确")
 		return
 	}
+	err = h.svc.Signup(ctx, domain.User{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+
 	ctx.String(http.StatusOK, "hello, 你在注册")
 }
 
