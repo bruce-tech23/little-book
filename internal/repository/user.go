@@ -6,6 +6,8 @@ import (
 	"geektime-basic-learning2/little-book/internal/repository/dao"
 )
 
+var ErrDuplicatedEmail = dao.ErrDuplicatedEmail // 别名，这样方法里可以直接返回dao层定义的错误
+
 type UserRepository struct {
 	dao *dao.UserDao
 }

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"geektime-basic-learning2/little-book/internal/domain"
 	"geektime-basic-learning2/little-book/internal/service"
 	regexp "github.com/dlclark/regexp2" // 官方自带的 regexp 不支持 ?=.
@@ -76,12 +77,15 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		Email:    req.Email,
 		Password: req.Password,
 	})
-	if err != nil {
+	// 这里判断邮箱冲突
+	switch {
+	case err == nil:
+		ctx.String(http.StatusOK, "注册成功")
+	case errors.Is(err, service.ErrDuplicatedEmail):
+		ctx.String(http.StatusOK, "邮箱已注册")
+	default:
 		ctx.String(http.StatusOK, "系统错误")
-		return
 	}
-
-	ctx.String(http.StatusOK, "注册成功")
 }
 
 func (h *UserHandler) Login(ctx *gin.Context) {
