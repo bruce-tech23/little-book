@@ -5,7 +5,10 @@ import (
 	"geektime-basic-learning2/little-book/internal/repository/dao"
 	"geektime-basic-learning2/little-book/internal/service"
 	"geektime-basic-learning2/little-book/internal/web"
+	"geektime-basic-learning2/little-book/internal/web/middleware"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -49,7 +52,7 @@ func initWebServer() *gin.Engine {
 	server.Use(cors.New(cors.Config{
 		AllowCredentials: true, // 是否允许带认证信息(例如 cookie)过来
 		// 旧版本AllowHeaders可以不写，默认的就行，新版本跨域时这个 Content-Type 必须要显示的写上
-		AllowHeaders: []string{"Content-Type"},
+		AllowHeaders: []string{"Content-Type", "Origin", "authorization"},
 		AllowOriginFunc: func(origin string) bool {
 			// if strings.Contains(origin, "localhost") {
 			if strings.HasPrefix(origin, "http://localhost") {
@@ -59,5 +62,10 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+	login := &middleware.LoginMiddlewareBuilder{}
+	// session 本身初始化
+	// 存储数据的 cookie，也就是 userId 存放的地方
+	store := cookie.NewStore([]byte("secret"))
+	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
 	return server
 }
