@@ -121,9 +121,27 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
-
+	type Req struct {
+		Nickname string `json:"nickname"`
+		Birthday string `json:"birthday"`
+		AboutMe  string `json:"aboutMe"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
 
 }
+
+//func (h *UserHandler) ProfileSession(ctx *gin.Context) {
+//	idVal, _ := ctx.Get("userId")
+//	uid, ok := idVal.(int64)
+//	if !ok {
+//		ctx.String(http.StatusOK, "系统错误")
+//		return
+//	}
+//	u, err := h.svc.FindById(ctx, uid)
+//}

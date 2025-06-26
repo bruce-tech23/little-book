@@ -8,7 +8,7 @@ import (
 	"geektime-basic-learning2/little-book/internal/web/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -65,7 +65,14 @@ func initWebServer() *gin.Engine {
 	login := &middleware.LoginMiddlewareBuilder{}
 	// session 本身初始化
 	// 存储数据的 cookie，也就是 userId 存放的地方
-	store := cookie.NewStore([]byte("secret"))
+	//store := cookie.NewStore([]byte("secret"))
+
+	// redis 存储
+	store, err := redis.NewStore(16, "tcp", "localhost:16379", "", "",
+		[]byte("TGvRiyJZTMNSRrZhZndRrEIOQ14cqF7E"), []byte("TGvRiyJZTMNSRrZhZndRrEIOQ14cqF7E")) // 16 最大空闲连接数
+	if err != nil {
+		panic(err)
+	}
 	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
 	return server
 }

@@ -47,3 +47,7 @@ func (svc *UserService) Login(ctx context.Context, email string, password string
 	}
 	return u, nil
 }
+
+//func (svc *UserService) FindById(ctx *gin.Context, uid int64) (interface{}, interface{}) {
+//
+//}
