@@ -6,10 +6,12 @@ import (
 	"geektime-basic-learning2/little-book/internal/service"
 	"geektime-basic-learning2/little-book/internal/web"
 	"geektime-basic-learning2/little-book/internal/web/middleware"
+	"geektime-basic-learning2/little-book/pkg/ginx/middleware/ratelimit"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
+	sessredis "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
@@ -64,6 +66,10 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "localhost:16379",
+	})
+	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build()) // 1秒最多100个请求
 	useJWT(server)
 	//useSession(server)
 	return server
@@ -81,7 +87,7 @@ func useSession(server *gin.Engine) {
 	//store := cookie.NewStore([]byte("secret"))
 
 	// redis 存储
-	store, err := redis.NewStore(16, "tcp", "localhost:16379", "", "",
+	store, err := sessredis.NewStore(16, "tcp", "localhost:16379", "", "",
 		[]byte("TGvRiyJZTMNSRrZhZndRrEIOQ14cqF7E"), []byte("TGvRiyJZTMNSRrZhZndRrEIOQ14cqF7E")) // 16 最大空闲连接数
 	if err != nil {
 		panic(err)
