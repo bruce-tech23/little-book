@@ -46,6 +46,14 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+
+		if uc.UserAgent != ctx.GetHeader("User-Agent") {
+			// 监控告警这里需要埋点
+			// 能够进来这个分支的，大概率是攻击者
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		expireTime := uc.ExpiresAt
 		// 这个不判断都可以。上面的 token.Valid 可能处理了，只是文档没说明
 		//if expireTime.Before(time.Now()) {
