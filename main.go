@@ -1,6 +1,7 @@
 package main
 
 import (
+	"geektime-basic-learning2/little-book/config"
 	"geektime-basic-learning2/little-book/internal/repository"
 	"geektime-basic-learning2/little-book/internal/repository/dao"
 	"geektime-basic-learning2/little-book/internal/service"
@@ -14,36 +15,35 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"net/http"
 	"strings"
 	"time"
 )
 
-//func main() {
-//	db := initDB()
-//	server := initWebServer()
-//	initUserHandler(db, server)
-//	err := server.Run(":8080")
-//	if err != nil {
-//		panic("Server run failed.")
-//	}
-//}
-
 func main() {
-	// Kubernetes 练习。去除对 MySQL 和 Redis 依赖
-	/*
-		 * 部署三个实例
-		也就是说，需要一个 Service, 一个 Deployment，这个 Deployment 管着三个 Pod，每一个 Pod 是一个实例。
-	*/
-	server := gin.Default()
-	server.GET("/hello", func(ctx *gin.Context) {
-		ctx.String(http.StatusOK, "hello")
-	})
+	db := initDB()
+	server := initWebServer()
+	initUserHandler(db, server)
 	err := server.Run(":8080")
 	if err != nil {
-		panic("Server start failed.")
+		panic("Server run failed.")
 	}
 }
+
+//func main() {
+//	// Kubernetes 练习。去除对 MySQL 和 Redis 依赖
+//	/*
+//		 * 部署三个实例
+//		也就是说，需要一个 Service, 一个 Deployment，这个 Deployment 管着三个 Pod，每一个 Pod 是一个实例。
+//	*/
+//	server := gin.Default()
+//	server.GET("/hello", func(ctx *gin.Context) {
+//		ctx.String(http.StatusOK, "hello")
+//	})
+//	err := server.Run(":8080")
+//	if err != nil {
+//		panic("Server start failed.")
+//	}
+//}
 
 func initUserHandler(db *gorm.DB, server *gin.Engine) {
 	ud := dao.NewUserDao(db)
@@ -54,7 +54,8 @@ func initUserHandler(db *gorm.DB, server *gin.Engine) {
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13306)/littlebook"))
+	// db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13306)/littlebook"))
+	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
 	if err != nil {
 		panic(err)
 	}
@@ -83,8 +84,11 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+	//redisClient := redis.NewClient(&redis.Options{
+	//	Addr: "localhost:16379",
+	//})
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:16379",
+		Addr: config.Config.Redis.Addr,
 	})
 	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build()) // 1秒最多100个请求
 	useJWT(server)

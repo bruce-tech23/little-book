@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: littlebook-service
+  name: littlebook-deployment
 spec:
   # 3 个副本
   replicas: 3
