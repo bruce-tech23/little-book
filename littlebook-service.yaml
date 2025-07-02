@@ -10,5 +10,5 @@ spec:
     - protocol: TCP
       port: 88
       targetPort: 8080
-  type: LoadBalancer
+  type: ClusterIP
   
