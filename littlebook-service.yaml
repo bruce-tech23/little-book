@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: littlebook
+spec:
+  selector:
+    # 和上面 metadata 的 name 一致，也要和 deployment 的命名一致
+    app: littlebook
+  ports:
+    - protocol: TCP
+      port: 88
+      targetPort: 8080
+  type: LoadBalancer
+  

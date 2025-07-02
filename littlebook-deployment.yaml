@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: littlebook-service
+spec:
+  # 3 个副本
+  replicas: 3
+  selector:
+    matchLabels:
+      app: littlebook
+  template:
+    metadata:
+      labels:
+        # 这里的 app 值与 matchLabels 中的 app 值要一致
+        app: littlebook
+
+    # 这个 spec 是 Deployment 管理的 Pod 的模板
+    spec:
+      # Pod 里面运行的所有的 container，一般简单的应用一个 Pod 就只有一个 container，但正常是所有容器所以是复数
+      containers:
+        - name: littlebook
+          # 和打包镜像时的命令要一致
+          image: burcetech/littlebook:v0.0.1
+          ports:
+            - containerPort: 8080
+
+  

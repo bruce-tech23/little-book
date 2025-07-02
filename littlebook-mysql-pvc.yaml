@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # 和 deployment.yaml 中的引用名称一致
+  name: littlebook-mysql-pvc
+spec:
+  storageClassName: trunk
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
