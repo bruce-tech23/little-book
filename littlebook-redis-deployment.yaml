@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: littlebook-redis
+  labels:
+    app: littlebook-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: littlebook-redis
+  template:
+    metadata:
+      name: littlebook-redis
+      labels:
+        app: littlebook-redis
+    spec:
+      containers:
+        - name: littlebook-redis
+          image: redis:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+      restartPolicy: Always
