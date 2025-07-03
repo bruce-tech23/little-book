@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"geektime-basic-learning2/little-book/internal/domain"
 	"geektime-basic-learning2/little-book/internal/repository/cache"
 	"geektime-basic-learning2/little-book/internal/repository/dao"
+	"log"
 	"time"
 )
 
@@ -18,8 +20,8 @@ type UserRepository struct {
 	cache *cache.UserCache
 }
 
-func NewUserRepository(dao *dao.UserDao) *UserRepository {
-	return &UserRepository{dao: dao}
+func NewUserRepository(dao *dao.UserDao, c *cache.UserCache) *UserRepository {
+	return &UserRepository{dao: dao, cache: c}
 }
 
 func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
@@ -64,9 +66,49 @@ func (repo *UserRepository) UpdateNonZeroFields(ctx context.Context, user domain
 }
 
 func (repo *UserRepository) FindById(ctx context.Context, uid int64) (domain.User, error) {
+	du, err := repo.cache.Get(ctx, uid)
+	// 只要 err 为 nil，就返回
+	if err == nil {
+		return du, nil
+	}
+
+	// err 不为 nil, 就要查询数据库
+	// err 有两种情况
+	// 1. key 不存在，说明 redis 是正常的
+	// 2. 访问 redis 有问题。可能是网络有问题，也可能是 redis 本身就崩溃了
+
 	u, err := repo.dao.FindById(ctx, uid)
 	if err != nil {
 		return domain.User{}, err
 	}
+	du = repo.toDomain(u)
+	err = repo.cache.Set(ctx, du)
+	if err != nil {
+		// 网络崩了，也可能是 redis 崩了
+		log.Println(err)
+	}
 	return repo.toDomain(u), nil
+}
+
+func (repo *UserRepository) FindByIdV1(ctx context.Context, uid int64) (domain.User, error) {
+	du, err := repo.cache.Get(ctx, uid)
+	switch {
+	case err == nil:
+		return du, nil
+	case errors.Is(err, cache.ErrKeyNotExist):
+		u, err := repo.dao.FindById(ctx, uid)
+		if err != nil {
+			return domain.User{}, err
+		}
+		du = repo.toDomain(u)
+		err = repo.cache.Set(ctx, du)
+		if err != nil {
+			// 网络崩了，也可能是 redis 崩了
+			log.Println(err)
+		}
+		return repo.toDomain(u), nil
+	default:
+		// 接近降级的写法
+		return domain.User{}, err
+	}
 }
