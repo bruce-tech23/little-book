@@ -42,10 +42,35 @@ func (dao *UserDao) FindByEmail(ctx context.Context, email string) (User, error)
 	return u, err
 }
 
+func (dao *UserDao) UpdateById(ctx context.Context, entity User) error {
+	// 这种写法依赖于 GORM 的零值和主键更新特性
+	// Update 非零值 WHERE id = ?
+	// return dao.db.WithContext(ctx).Updates(&entity).Error
+	return dao.db.WithContext(ctx).Model(&entity).Where("id = ?", entity.Id).
+		Updates(map[string]any{
+			"utime":    time.Now().UnixMilli(),
+			"nickname": entity.Nickname,
+			"birthday": entity.Birthday,
+			"about_me": entity.AboutMe,
+		}).Error
+}
+
+func (dao *UserDao) FindById(ctx context.Context, uid int64) (User, error) {
+	var res User
+	err := dao.db.WithContext(ctx).Where("id = ?", uid).First(&res).Error
+	return res, err
+}
+
 type User struct {
 	Id       int64  `gorm:"primaryKey,autoIncrement"` // 这些字段要去官网复制，以免写错难以排查问题 https://gorm.io/zh_CN/docs/models.html
 	Email    string `gorm:"unique"`
 	Password string
+
+	Nickname string `gorm:"type:varchar(128)"`
+	// YYYY-MM-DD
+	Birthday int64
+	AboutMe  string `gorm:"type:varchar(4096)"`
+
 	// 不要使用任何和时区有关的数据，最好的事使用 UTC 0 的毫秒数，要处理时区要去 domain 的对象上定义，然后在给前端的逻辑中处理
 	Ctime int64 // 创建时间
 	Utime int64 // 更新时间
