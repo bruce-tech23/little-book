@@ -3,8 +3,11 @@ package main
 import (
 	"geektime-basic-learning2/little-book/config"
 	"geektime-basic-learning2/little-book/internal/repository"
+	"geektime-basic-learning2/little-book/internal/repository/cache"
 	"geektime-basic-learning2/little-book/internal/repository/dao"
 	"geektime-basic-learning2/little-book/internal/service"
+	"geektime-basic-learning2/little-book/internal/service/sms"
+	"geektime-basic-learning2/little-book/internal/service/sms/localsms"
 	"geektime-basic-learning2/little-book/internal/web"
 	"geektime-basic-learning2/little-book/internal/web/middleware"
 	"geektime-basic-learning2/little-book/pkg/ginx/middleware/ratelimit"
@@ -21,8 +24,12 @@ import (
 
 func main() {
 	db := initDB()
-	server := initWebServer()
-	initUserHandler(db, server)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: config.Config.Redis.Addr,
+	})
+	server := initWebServer(redisClient)
+	codeSvc := initCodeSvc(redisClient)
+	initUserHandler(db, redisClient, codeSvc, server)
 	err := server.Run(":8080")
 	if err != nil {
 		panic("Server run failed.")
@@ -45,12 +52,23 @@ func main() {
 //	}
 //}
 
-func initUserHandler(db *gorm.DB, server *gin.Engine) {
+func initUserHandler(db *gorm.DB, redisClient redis.Cmdable, codeSvc *service.CodeService, server *gin.Engine) {
 	ud := dao.NewUserDao(db)
-	ur := repository.NewUserRepository(ud)
+	uc := cache.NewUserCache(redisClient)
+	ur := repository.NewUserRepository(ud, uc)
 	us := service.NewUserService(ur)
-	hdl := web.NewUserHandler(us)
+	hdl := web.NewUserHandler(us, codeSvc)
 	hdl.RegisterRoutes(server)
+}
+
+func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
+	cc := cache.NewCodeCache(redisClient)
+	crepo := repository.NewCodeRepository(cc)
+	return service.NewCodeService(crepo, initMemorySms())
+}
+
+func initMemorySms() sms.Service {
+	return localsms.NewService()
 }
 
 func initDB() *gorm.DB {
@@ -66,7 +84,7 @@ func initDB() *gorm.DB {
 	return db
 }
 
-func initWebServer() *gin.Engine {
+func initWebServer(redisClient redis.Cmdable) *gin.Engine {
 	server := gin.Default()
 	// 跨域处理
 	server.Use(cors.New(cors.Config{
@@ -87,9 +105,6 @@ func initWebServer() *gin.Engine {
 	//redisClient := redis.NewClient(&redis.Options{
 	//	Addr: "localhost:16379",
 	//})
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: config.Config.Redis.Addr,
-	})
 	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build()) // 1秒最多100个请求
 	useJWT(server)
 	//useSession(server)

@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
@@ -61,15 +62,23 @@ func (dao *UserDao) FindById(ctx context.Context, uid int64) (User, error) {
 	return res, err
 }
 
+func (dao *UserDao) FindByPhone(ctx context.Context, phone string) (User, error) {
+	var res User
+	err := dao.db.WithContext(ctx).Where("phone = ?", phone).First(&res).Error
+	return res, err
+}
+
 type User struct {
-	Id       int64  `gorm:"primaryKey,autoIncrement"` // 这些字段要去官网复制，以免写错难以排查问题 https://gorm.io/zh_CN/docs/models.html
-	Email    string `gorm:"unique"`
+	Id       int64          `gorm:"primaryKey,autoIncrement"` // 这些字段要去官网复制，以免写错难以排查问题 https://gorm.io/zh_CN/docs/models.html
+	Email    sql.NullString `gorm:"unique"`
 	Password string
 
 	Nickname string `gorm:"type:varchar(128)"`
 	// YYYY-MM-DD
 	Birthday int64
 	AboutMe  string `gorm:"type:varchar(4096)"`
+
+	Phone sql.NullString `gorm:"unique"` // 由于 Phone 和 Email 都是唯一索引，但是字符串可以为空就会导致异常。所以要替换为 sql.NullString 或 *string
 
 	// 不要使用任何和时区有关的数据，最好的事使用 UTC 0 的毫秒数，要处理时区要去 domain 的对象上定义，然后在给前端的逻辑中处理
 	Ctime int64 // 创建时间

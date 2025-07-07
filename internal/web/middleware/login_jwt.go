@@ -18,7 +18,10 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	gob.Register(time.Now()) // 注册时间这个结构体类型，为了后面的 sess.Set(updateTimeKey, now) 可以存储这个结构体的字节切片
 	return func(ctx *gin.Context) {
 		path := ctx.Request.URL.Path
-		if path == "/users/signup" || path == "/users/login" {
+		if path == "/users/signup" ||
+			path == "/users/login" ||
+			path == "/users/login_sms/code/send" ||
+			path == "/users/login_sms" {
 			// 这两个接口要么没注册要么没登录，所以不需要校验是否登录
 			return
 		}
