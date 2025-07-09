@@ -23,13 +23,7 @@ import (
 )
 
 func main() {
-	db := initDB()
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: config.Config.Redis.Addr,
-	})
-	server := initWebServer(redisClient)
-	codeSvc := initCodeSvc(redisClient)
-	initUserHandler(db, redisClient, codeSvc, server)
+	server := InitWebServer()
 	err := server.Run(":8080")
 	if err != nil {
 		panic("Server run failed.")
