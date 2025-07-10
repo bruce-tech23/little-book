@@ -11,12 +11,17 @@ import (
 
 var ErrKeyNotExist = redis.Nil
 
-type UserCache struct {
+type UserCache interface {
+	Get(ctx context.Context, uid int64) (domain.User, error)
+	Set(ctx context.Context, du domain.User) error
+}
+
+type RedisUserCache struct {
 	cmd        redis.Cmdable
 	expiration time.Duration
 }
 
-func (c *UserCache) Get(ctx context.Context, uid int64) (domain.User, error) {
+func (c *RedisUserCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 	key := c.key(uid)
 	data, err := c.cmd.Get(ctx, key).Result()
 	if err != nil {
@@ -27,11 +32,11 @@ func (c *UserCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 	return u, err
 }
 
-func (c *UserCache) key(uid int64) string {
+func (c *RedisUserCache) key(uid int64) string {
 	return fmt.Sprintf("user:info:%d", uid)
 }
 
-func (c *UserCache) Set(ctx context.Context, du domain.User) error {
+func (c *RedisUserCache) Set(ctx context.Context, du domain.User) error {
 	key := c.key(du.Id)
 	d, err := json.Marshal(du)
 	if err != nil {
@@ -40,17 +45,17 @@ func (c *UserCache) Set(ctx context.Context, du domain.User) error {
 	return c.cmd.Set(ctx, key, d, c.expiration).Err()
 }
 
-func NewUserCache(cmd redis.Cmdable) *UserCache {
-	return &UserCache{
+func NewUserCache(cmd redis.Cmdable) UserCache {
+	return &RedisUserCache{
 		cmd:        cmd,
 		expiration: time.Minute * 15, // user 专用的缓存，过期时间基本固定的，所以不需要外面传入
 	}
 }
 
 // NewUserCacheV0 要想做到松耦合，一定不要自己去初始化你需要的东西，让外面传进来。尽量面向接口编程。
-func NewUserCacheV0(addr string) *UserCache {
+func NewUserCacheV0(addr string) *RedisUserCache {
 	cmd := redis.NewClient(&redis.Options{Addr: addr}) // 这里初始化不太好，因为 Options 可能不只需要Addr,可能还需要别的参数
-	return &UserCache{
+	return &RedisUserCache{
 		cmd:        cmd,
 		expiration: time.Minute * 15,
 	}

@@ -24,12 +24,12 @@ var JWTKey = []byte("TGvRiyJZTMNSRrZhZndRrEIOQ14cqF7a")
 type UserHandler struct {
 	emailRegExp    *regexp.Regexp
 	passwordRegExp *regexp.Regexp
-	svc            *service.UserService
-	codeSvc        *service.CodeService
+	svc            service.UserService
+	codeSvc        service.CodeService
 }
 
 // NewUserHandler svc 外面传入是保证 依赖注入 的风格，所以不能这里 new
-func NewUserHandler(svc *service.UserService, codeSrv *service.CodeService) *UserHandler {
+func NewUserHandler(svc service.UserService, codeSrv service.CodeService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
