@@ -5,7 +5,10 @@ import (
 	"geektime-basic-learning2/little-book/internal/repository/cache"
 )
 
-var ErrCodeVerifyTooMany = cache.ErrCodeVerifyTooMany
+var (
+	ErrCodeSendTooMany   = cache.ErrCodeSendTooMany
+	ErrCodeVerifyTooMany = cache.ErrCodeVerifyTooMany
+)
 
 type CodeRepository interface {
 	Set(ctx context.Context, biz, phone, code string) error

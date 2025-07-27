@@ -11,7 +11,7 @@ import (
 var (
 	ErrDuplicatedEmail       = repository.ErrDuplicatedUser
 	ErrInvalidUserOrPassword = errors.New("用户名或密码不正确")
-	ErrCodeSendTooMany       = repository.ErrCodeVerifyTooMany
+	ErrCodeSendTooMany       = repository.ErrCodeSendTooMany
 )
 
 type UserService interface {
