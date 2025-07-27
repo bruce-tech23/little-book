@@ -30,7 +30,7 @@ type CachedUserRepository struct {
 	cache cache.UserCache
 }
 
-func NewUserRepository(dao dao.UserDao, c cache.UserCache) UserRepository {
+func NewCachedUserRepository(dao dao.UserDao, c cache.UserCache) UserRepository {
 	return &CachedUserRepository{dao: dao, cache: c}
 }
 
@@ -55,6 +55,7 @@ func (repo *CachedUserRepository) toDomain(u dao.User) domain.User {
 		AboutMe:  u.AboutMe,
 		Nickname: u.Nickname,
 		Birthday: time.UnixMilli(u.Birthday),
+		Ctime:    time.UnixMilli(u.Ctime),
 	}
 }
 
