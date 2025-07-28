@@ -11,6 +11,7 @@ import (
 )
 
 func InitSMSService() sms.Service {
+	//return ratelimit.NewLimitSMSService(localsms.NewService(), limiter.NewRedisSlidingWindowLimiter())
 	return localsms.NewService()
 	// 如果有需要，就可以切换用腾讯的短信服务
 	// return initTencentSMSService()

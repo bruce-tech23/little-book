@@ -4,6 +4,7 @@ import (
 	"geektime-basic-learning2/little-book/internal/web"
 	"geektime-basic-learning2/little-book/internal/web/middleware"
 	"geektime-basic-learning2/little-book/pkg/ginx/middleware/ratelimit"
+	"geektime-basic-learning2/little-book/pkg/limiter"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -35,7 +36,7 @@ func InitMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 			},
 			MaxAge: 12 * time.Hour,
 		}),
-		ratelimit.NewBuilder(redisClient, time.Second, 100).Build(),
+		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 100)).Build(),
 		(&middleware.LoginJWTMiddlewareBuilder{}).CheckLogin(),
 	}
 }

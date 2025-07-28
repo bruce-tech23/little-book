@@ -3,29 +3,21 @@ package ratelimit
 import (
 	_ "embed"
 	"fmt"
+	"geektime-basic-learning2/little-book/pkg/limiter"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
-	"time"
 )
 
 type Builder struct {
-	prefix   string
-	cmd      redis.Cmdable
-	interval time.Duration
-	rate     int // 阈值
+	prefix  string
+	limiter limiter.Limiter
 }
 
-//go:embed slide_window.lua
-var luaScript string
-
-func NewBuilder(cmd redis.Cmdable, interval time.Duration, rate int) *Builder {
+func NewBuilder(l limiter.Limiter) *Builder {
 	return &Builder{
-		cmd:      cmd,
-		prefix:   "ip-limiter",
-		interval: interval,
-		rate:     rate,
+		prefix:  "ip-limiter",
+		limiter: l,
 	}
 }
 
@@ -36,7 +28,8 @@ func (b *Builder) Prefix(prefix string) *Builder {
 
 func (b *Builder) Build() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		limited, err := b.limit(ctx)
+		key := fmt.Sprintf("%s:%s", b.prefix, ctx.ClientIP())
+		limited, err := b.limiter.Limit(ctx, key)
 		if err != nil {
 			log.Println(err)
 			// 如果这边出错了，要怎么办
@@ -53,10 +46,4 @@ func (b *Builder) Build() gin.HandlerFunc {
 		}
 		ctx.Next()
 	}
-}
-
-func (b *Builder) limit(ctx *gin.Context) (bool, error) {
-	key := fmt.Sprintf("%s:%s", b.prefix, ctx.ClientIP())
-	return b.cmd.Eval(ctx, luaScript, []string{key},
-		b.interval.Milliseconds(), b.rate, time.Now().UnixMilli()).Bool()
 }
